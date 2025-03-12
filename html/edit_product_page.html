@@ -1,0 +1,27 @@
+<div id="page-edit-product-heading"></div>
+<div class="card">
+    <h5 class="card-header">Product Information</h5>
+    <div class="card-body" id="edit-product-info">
+        <div class="input-group mb-3">
+            <span class="input-group-text">Name</span>
+            <input type="text" class="form-control product-name">
+        </div>
+        <div class="col-md-2">
+            <label for="product-price" class="form-label">Unit Price</label>
+            <div class="input-group mb-3">
+                <span class="input-group-text">$</span>
+                <input type="text" inputmode="numeric" class="form-control product-price text-end" id="product-price" value="0.00" step="0.01">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="product-description" class="form-label">Description</label>
+            <textarea class="form-control product-description" aria-multiline="true"></textarea>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <h5 class="card-header">Product Notes</h5>
+    <div class="card-body">
+        <textarea class="form-control" id="product-notes" rows="3"></textarea>
+    </div>
+</div>

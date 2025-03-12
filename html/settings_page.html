@@ -1,0 +1,161 @@
+<div class="d-flex" style="padding:15px 0px 15px 0px;">
+    <div style="margin-right:auto;">
+        <h2 data-testid="page-settings-heading">Settings</h2>
+    </div>
+    <div style="display:flex;align-items:center;">
+        <button type="button" style="display:flex;margin-left:auto" class="btn btn-primary"
+            id="save-settings-btn" data-testid="save-settings-btn">Save Settings</button>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <h5 style="margin-bottom:0;margin-right:auto;">Vendor</h5>
+    </div>
+    <div class="card-body vendor-info">
+        <div class="input-group mb-3">
+            <span class="input-group-text">Name</span>
+            <input type="text" class="form-control contact-name"
+                data-testid="settings-vendor-name">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Phone</span>
+            <input type="text" class="form-control contact-phone"
+                data-testid="settings-vendor-phone">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Email</span>
+            <input type="text" class="form-control contact-email"
+                data-testid="settings-vendor-email">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Address</span>
+            <input type="text" class="form-control contact-address"
+                data-testid="settings-vendor-address">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">City</span>
+            <input type="text" class="form-control contact-city"
+                data-testid="settings-vendor-city">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Postcode</span>
+            <input type="text" class="form-control contact-postcode"
+                data-testid="settings-vendor-postcode">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">ABN</span>
+            <input type="text" class="form-control" id="settings-vendor-abn"
+                data-testid="settings-vendor-abn">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">GST</span>
+            <input type="number" min="0" class="form-control" placeholder="0"
+                id="settings-vendor-gst" data-testid="settings-vendor-gst">
+            <span class="input-group-text">%</span>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <h5 style="margin-bottom:0;margin-right:auto;">Payment Details</h5>
+    </div>
+    <div class="card-body payment-info">
+        <div class="input-group mb-3">
+            <span class="input-group-text">Bank</span>
+            <input type="text" class="form-control payment-bank" placeholder=""
+                data-testid="settings-bank-name">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">BSB</span>
+            <input type="text" class="form-control payment-bsb" placeholder=""
+                data-testid="settings-bank-bsb">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Name</span>
+            <input type="text" class="form-control payment-name" placeholder=""
+                data-testid="settings-bank-account-name">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Account</span>
+            <input type="text" class="form-control payment-account" placeholder=""
+                data-testid="settings-bank-account-number">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Reference</span>
+            <input type="text" class="form-control payment-reference"
+                placeholder="" data-testid="settings-bank-reference">
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <h5 style="margin-bottom:0;margin-right:auto;">PayID</h5>
+    </div>
+    <div class="card-body payid-info">
+        <div class="input-group mb-3">
+            <span class="input-group-text">Name</span>
+            <input type="text" class="form-control payment-payid-name"
+                placeholder="" data-testid="settings-payid-name">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">ID</span>
+            <input type="text" class="form-control payment-payid-id"
+                placeholder="" data-testid="settings-payid-id">
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <h5 style="margin-bottom:0;margin-right:auto;">Invoice</h5>
+    </div>
+    <div class="card-body">
+        <div class="input-group mb-3">
+            <span class="input-group-text">Invoice Number Prefix</span>
+            <input type="text" class="form-control" placeholder="INV-"
+                id="settings-invoice-prefix" data-testid="settings-invoice-prefix">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Next Invoice Number</span>
+            <input type="text" class="form-control" placeholder="1"
+                id="settings-next-invoice-number" data-testid="settings-next-invoice-number">
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <h5 style="margin-bottom:0;margin-right:auto;">Client Invoice Email</h5>
+    </div>
+    <div class="card-body">
+        <div class="input-group mb-3">
+            <span class="input-group-text">Subject</span>
+            <input type="text" class="form-control" id="settings-email-subject"
+                data-testid="settings-email-subject">
+        </div>
+        <div class="mb-3">
+            <label for="settings-email-body" class="form-label">Body</label>
+            <textarea class="form-control" id="settings-email-body" rows="3"
+                data-testid="settings-email-body"></textarea>
+        </div>
+        <button type="button" class="btn btn-success" id="settings-email-help-btn"
+            data-testid="settings-email-help-btn">Help</button>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <h5 style="margin-bottom:0;margin-right:auto;">Google Account</h5>
+    </div>
+    <div class="card-body">
+        <div class="input-group mb-3">
+            <span class="input-group-text">Client ID</span>
+            <input type="text" class="form-control" placeholder=""
+                id="settings-gapi-client-id" data-testid="settings-gapi-client-id">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Google Drive Path</span>
+            <input type="text" class="form-control" placeholder=""
+                id="settings-google-drive-path" data-testid="settings-google-drive-path">
+        </div>
+        <button type="button" class="btn btn-primary" id="gapi-signin-btn"
+            disabled data-testid="gapi-signin-btn">Authorise</button>
+    </div>
+</div>

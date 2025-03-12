@@ -1,0 +1,187 @@
+<div id="page-edit-invoice-heading" data-testid="page-edit-invoice-heading"></div>
+<div class="row" style="padding-bottom:8px;">
+    <div class="col">
+        <table class="table table-borderless" style="table-layout: auto;">
+            <colgroup>
+                <col style="max-width:min-content;">
+                <col>
+            </colgroup>
+            <tbody class="invoice-info-table">
+                <!-- Invoice items rows -->
+            </tbody>
+        </table>
+    </div>
+    <div class="col">
+        <div class="input-group mb-3">
+            <span class="input-group-text">Invoice date</span>
+            <input type="date" class="form-control invoice-date">
+        </div>
+        <div class="input-group">
+            <span class="input-group-text">Due date</span>
+            <input type="date" class="form-control invoice-due-date">
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex" style="align-items:center;">
+            <h5 style="margin-bottom:0;margin-right:auto;">Client Information</h5>
+            <button type="button" style="display:flex;" class="btn btn-primary" id="invoice-select-client-btn">Select existing</button>
+        </div>
+    </div>
+    <div class="card-body client-info" data-testid="invoice-client-info">
+        <div class="row">
+            <div class="col input-group mb-3">
+                <span class="input-group-text">Name</span>
+                <input type="text" class="form-control contact-name">
+            </div>
+            <div class="col input-group mb-3">
+                <span class="input-group-text">Surname</span>
+                <input type="text" class="form-control contact-surname">
+            </div>
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Phone</span>
+            <input type="text" class="form-control contact-phone">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Email</span>
+            <input type="text" class="form-control contact-email">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Address</span>
+            <input type="text" class="form-control contact-address">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">City</span>
+            <input type="text" class="form-control contact-city">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Postcode</span>
+            <input type="text" class="form-control contact-postcode">
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex" style="align-items:center;">
+            <h5 style="margin-bottom:0;margin-right:auto;">Vehicle Information</h5>
+            <button type="button" style="display:flex;" class="btn btn-primary" id="invoice-select-vehicle-btn" disabled readonly>Select existing</button>
+        </div>
+    </div>
+    <div class="card-body vehicle-info" data-testid="invoice-vehicle-info">
+        <div class="input-group mb-3">
+            <span class="input-group-text">Rego</span>
+            <input type="text" class="form-control vehicle-rego" id="invoice-vehicle-rego">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Model</span>
+            <input type="text" class="form-control vehicle-make-model" id="invoice-vehicle-make-model">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Odometer</span>
+            <input type="text" class="form-control vehicle-odometer" id="invoice-vehicle-odometer">
+        </div>
+    </div>
+</div>
+<div class="card">
+    <h5 class="card-header">Invoice Items</h5>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                  <th scope="col">Item</th>
+                  <th scope="col">Description</th>
+                  <th scope="col">Qty</th>
+                  <th scope="col">Price</th>
+                  <th scope="col">Total</th>
+                  <th scope="col">Actions</th>
+                </tr>
+          </thead>
+          <tbody class="invoice-items">
+              <!-- Invoice items rows -->
+          </tbody>
+        </table>
+        <div class="text-end" style="padding: 0px 0px 10px 0px;">
+            <button type="button" class="btn btn-primary" id="invoice-add-item-btn">Add Row</button>
+            <button type="button" class="btn btn-primary" id="invoice-select-item-btn">Select existing</button>
+        </div>
+        <div class="row d-flex justify-content-end">
+            <div class="col-md-4">
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="text-left"><span class="text-muted">Subtotal</span></div>
+                            </td>
+                            <td>
+                                <div class="text-end"><span class="invoice-sub-total">$168.50</span></div>
+                            </td>
+                        </tr>
+                        <tr class="invoice-discount-pct-row">
+                            <td class="align-middle">
+                                <div class="text-left"><span class="text-muted">Discount Percent</span> </div>
+                            </td>
+                            <td>
+                                <div class="text-end">
+                                    <div class="input-group" style="width:130px; float:right;">
+                                        <span class="input-group-text">%</span>
+                                        <input type="text" inputmode="numeric" class="form-control text-success text-end invoice-discount-pct" value="0.0" step="0.01">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="invoice-discount-row">
+                            <td class="align-middle">
+                                <div class="text-left"><span class="text-muted">Discount</span> </div>
+                            </td>
+                            <td>
+                                <div class="text-end">
+                                    <div class="input-group" style="width:130px; float:right;">
+                                        <span class="input-group-text">$</span>
+                                        <input type="text" inputmode="numeric" class="form-control text-success text-end invoice-discount" value="0.00" step="0.01">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="text-left"><span class="text-muted invoice-gst-rate">GST</span> </div>
+                            </td>
+                            <td>
+                                <div class="text-end"><span class="invoice-gst">$7.65</span></div>
+                            </td>
+                        </tr>
+                        <tr class="invoice-received-row">
+                            <td class="align-middle">
+                                <div class="text-left"><span class="text-muted">Received</span> </div>
+                            </td>
+                            <td>
+                                <div class="text-end">
+                                    <div class="input-group" style="width:130px; float:right;">
+                                        <span class="input-group-text">$</span>
+                                        <input type="text" inputmode="numeric" class="form-control text-success text-end invoice-received" value="0.00" step="0.01">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-top border-bottom">
+                            <td>
+                                <div class="text-left"><span class="font-weight-bold">Total</span></div>
+                            </td>
+                            <td>
+                                <div class="text-end"><span class="font-weight-bold invoice-total">$238.50</span></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <h5 class="card-header">Notes</h5>
+    <div class="card-body">
+        <textarea class="form-control invoice-notes" id="invoice-notes" rows="3"></textarea>
+    </div>
+</div>

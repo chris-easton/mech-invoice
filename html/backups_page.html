@@ -1,0 +1,32 @@
+<div class="d-flex" style="padding:15px 0px 15px 0px;">
+    <div style="margin-right:auto;">
+        <h2 data-testid="page-heading">Backups</h2>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <h5 style="margin-bottom:0;margin-right:auto;">Google Drive Backups</h5>
+    </div>
+    <div class="card-body backup-list">
+        <button type="button" style="" class="btn btn-primary mb-3" id="create-drive-backup-btn">
+            <span class="spinner-border spinner-border-sm d-none" id="create-drive-backup-spin" aria-hidden="true"></span>
+            <span>Create backup</span>
+        </button>
+        <button type="button" style="" class="btn btn-primary mb-3" id="restore-drive-backup-btn">
+            <span class="spinner-border spinner-border-sm d-none" id="restore-drive-backup-spin" aria-hidden="true"></span>
+            <span>Restore from backup</span>
+        </button>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <h5 style="margin-bottom:0;margin-right:auto;">File Backups</h5>
+    </div>
+    <div class="card-body backup-list">
+        <button type="button" style="" class="btn btn-primary mb-3" id="create-file-backup-btn">Download backup</button>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Import backup</span>
+            <input type="file" class="form-control" id="import-file-backup-input">
+        </div>
+    </div>
+</div>

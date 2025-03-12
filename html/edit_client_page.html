@@ -1,0 +1,63 @@
+<div id="page-edit-client-heading"></div>
+<div class="card">
+    <h5 class="card-header">Client Information</h5>
+    <div class="card-body client-info">
+        <div class="row">
+            <div class="col input-group mb-3">
+                <span class="input-group-text">Name</span>
+                <input type="text" class="form-control contact-name">
+            </div>
+            <div class="col input-group mb-3">
+                <span class="input-group-text">Surname</span>
+                <input type="text" class="form-control contact-surname">
+            </div>
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Phone</span>
+            <input type="text" class="form-control contact-phone">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Email</span>
+            <input type="text" class="form-control contact-email">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Address</span>
+            <input type="text" class="form-control contact-address">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">City</span>
+            <input type="text" class="form-control contact-city">
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">Postcode</span>
+            <input type="text" class="form-control contact-postcode">
+        </div>
+    </div>
+</div>
+<div class="card">
+    <h5 class="card-header">Client Vehicles</h5>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                  <th scope="col" class="col-md-1">Rego</th>
+                  <th scope="col">Make and model</th>
+                  <th scope="col">Notes</th>
+                  <th scope="col">Actions</th>
+                </tr>
+          </thead>
+          <tbody class="client-vehicles-body">
+              <!-- rows -->
+          </tbody>
+        </table>
+        <div class="text-end" style="padding: 0px 0px 10px 0px;">
+            <button type="button" class="btn btn-primary" id="client-vehicles-add-btn">Add Vehicle</button>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <h5 class="card-header">Client Notes</h5>
+    <div class="card-body">
+        <textarea class="form-control" id="client-notes" rows="3" data-testid="client-notes"></textarea>
+    </div>
+</div>

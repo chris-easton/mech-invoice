@@ -1,0 +1,14 @@
+{
+  "name": "mech-invoice",
+  "version": "1.0.0",
+  "description": "Basic invoicing SPA for automotive mechanic. Built to help out a neighbour and learn. Don't use this professionally!",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.50.1",
+    "@types/node": "^22.13.4"
+  }
+}

@@ -1,0 +1,48 @@
+.hidden { display: none; }
+.card { margin: 0px 0px 20px 0px; box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.15), 0 4px 6px 0 rgba(0, 0, 0, 0.14); }
+.page-content {
+    margin: 0px 25px 25px 25px;
+}
+.btn {
+    min-width:45px;
+}
+.column-header tr {
+    display: flex;
+    justify-content: space-between;
+}
+button span {
+    pointer-events: none;
+}
+button span svg {
+    pointer-events: none;
+}
+.edit-btn svg path {
+    fill: #444;
+}
+.sent-indicator {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.uploaded-indicator {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sent-indicator svg {
+    width: 17px;
+    height: 17px;
+    padding-bottom: 2px;
+}
+.uploaded-indicator svg {
+    width: 17px;
+    height: 17px;
+    padding-bottom: 2px;
+}
+.invoice-info-table td {
+    padding: 0 0 5px 0;
+}
