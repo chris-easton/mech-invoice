@@ -5,7 +5,7 @@ a proof of concept with many issues. Don't use this professionally!
 
 # How to build
 ```
-./build.sh
+python ./build.py
 ```
 
 # How to run the unit tests
