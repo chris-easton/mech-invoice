@@ -33,16 +33,3 @@ function clientsSortItems(items) {
     });
 }
 
-async function onClientChosen(sid) {
-    const id = parseInt(sid);
-    console.log("Chose client Id=" + id);
-    const client = await dbGetClientById(id);
-    current_invoice.client_id = id;
-    contactToUi(client.contact, '#page-edit-invoice .client-info', id);
-    resetVehicleUi('#page-edit-invoice .vehicle-info');
-    const select_vehicle_btn = document.getElementById('invoice-select-vehicle-btn');
-    select_vehicle_btn.disabled = false;
-    select_vehicle_btn.readonly = false;
-    vehicle_chooser_filter = client.vehicle_ids;
-}
-

@@ -186,7 +186,7 @@ class Paginated_items {
             document.querySelectorAll(`.delete-${this.item_name}-btn`).forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const id = e.target.getAttribute('data-id');
-                    const spinner = e.currentTarget.querySelector(`.edit-${this.item_name}-spin`);
+                    const spinner = e.currentTarget.querySelector(`.delete-${this.item_name}-spin`);
                     const icon = e.currentTarget.querySelector(`.delete-${this.item_name}-icon`);
                     icon.classList.add('d-none');
                     spinner.classList.remove('d-none');

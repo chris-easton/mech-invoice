@@ -34,7 +34,26 @@ class Contact_info {
     }
 }
 
-function clearContactUi(selector) {
+function contactUiSetDisabled(selector, disabled) {
+    const element = document.querySelector(selector);
+    element.querySelector('.contact-name').disabled = disabled;
+    element.querySelector('.contact-surname').disabled = disabled;
+    element.querySelector('.contact-email').disabled = disabled;
+    element.querySelector('.contact-phone').disabled = disabled;
+    element.querySelector('.contact-address').disabled = disabled;
+    element.querySelector('.contact-city').disabled = disabled;
+    element.querySelector('.contact-postcode').disabled = disabled;
+}
+
+function disableContactUi(selector) {
+    contactUiSetDisabled(selector, true);
+}
+
+function enableContactUi(selector) {
+    contactUiSetDisabled(selector, false);
+}
+
+function clearContactUi(selector, disable=false) {
     const element = document.querySelector(selector);
     element.querySelector('.contact-name').value = '';
     element.querySelector('.contact-surname').value = '';
@@ -44,6 +63,9 @@ function clearContactUi(selector) {
     element.querySelector('.contact-city').value = '';
     element.querySelector('.contact-postcode').value = '';
     element.removeAttribute('data-id');
+    if (disable) {
+        disableContactUi(selector);
+    }
 }
 
 function uiToContact(contact, selector) {

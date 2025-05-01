@@ -112,6 +112,16 @@ const TEST_VEHICLES = [
         make_model: '2018 Honda Scrambler',
         kms: 20320
     },
+    {
+        rego: 'S464BAD',
+        make_model: '2023 BYD GOLDFISH',
+        kms: 0
+    },
+    {
+        rego: '',
+        make_model: 'Not sure',
+        kms: 666888
+    },
 ];
 
 const TEST_ITEMS = [
@@ -274,10 +284,6 @@ async function setAllSettings(page) {
 }
 
 
-async function fillInClient(page, client) {
-    await page.getByTestId('settings-vendor-address').fill(TEST_SETTINGS.vendor_address);
-}
-
 async function contactToPage(page, selector, contact) {
     const contact_loc = page.locator(selector);
     if (contact.name !== undefined) {
@@ -320,7 +326,7 @@ async function vehicleToPage(page, selector, vehicle, invoice_vehicle=false) {
     if (vehicle.make_model !== undefined) {
         await vehicle_info_loc.locator('input.vehicle-make-model').fill(vehicle.make_model);
     }
-    if (vehicle.kms !== undefined && invoice_vehicle) {
+    if (vehicle.kms !== undefined && vehicle.kms !== 0 && invoice_vehicle) {
         const kms = vehicle.kms.toString();
         await vehicle_info_loc.locator('input.vehicle-odometer').fill(kms);
     }
@@ -434,6 +440,12 @@ class Invoice {
         this.total = this.subtotal - this.discount_amount + this.gst_amount;
         this.amount_due = this.total - this.received_amount;
     }
+
+    getTotalsStr() {
+        let discount = ' Disc(' + this.dicount_pct + '%): $' + this.discount_amount.toFixed(2) + ' ';
+        let gst = ' GST(' + this.gst_pct + '%): $' + this.gst_amount.toFixed(2) + ' ';
+        return 'Sub: $' + this.subtotal.toFixed(2) + discount + gst + 'Rec: $' + this.received_amount.toFixed(2) + ' Total: $' + this.total.toFixed(2) + ' Due: $' + this.amount_due.toFixed(2);
+    }
 }
 
 
@@ -450,14 +462,14 @@ class Manage_invoices_page {
         } else {
             await this.page.goto('http://localhost:8000/#manage-invoices');
         }
-        await sleep(100);
+        await sleep(500);
     }
 
     async getPageCount() {
         const pagination_text_loc = await this.page.locator('#invoice-page-info');
         const regex = /Page (\d+) of (\d+)/;
         const page_info = await pagination_text_loc.textContent();
-        const match = page_info.match(regex);
+        const match = await page_info.match(regex);
         return match;
     }
 
@@ -478,14 +490,16 @@ class Manage_invoices_page {
         await sleep(500);
     }
 
-    async getTableRow(invoice) {
-        var current_page = 1;
+    async getTableRow(invoice, check_pages=true) {
+        var current_page = 0;
         var found = false;
         var row = null;
         var row_counts = [];
         const page_info = await this.getPageCount();
-        while (!found && (current_page <= page_info[2])) {
-            await this.goto(current_page);
+        while (!found && (current_page < page_info[2])) {
+            if (check_pages) {
+                await this.goto(current_page+1); // Index to page number
+            }
             const invoice_list_loc = await this.page.locator('#invoice-list-body');
             const rows = await invoice_list_loc.locator('tr');
             const row_count = await rows.count();
@@ -493,13 +507,17 @@ class Manage_invoices_page {
             expect(row_count).toBeGreaterThan(0);
             for (let i = 0; i < row_count; i++) {
                 row = await rows.nth(i);
-                const cellText = await row.locator('td:nth-child(1)').textContent();
+                const cell = await row.locator('td:nth-child(1)');
+                const cellText = await cell.textContent();
                 if (cellText.includes(invoice.number)) {
                     found = true;
                     break;
                 }
             }
             current_page++;
+            if (!check_pages) {
+                break;
+            }
         }
         if (found) {
             return row;
@@ -513,8 +531,11 @@ class Manage_invoices_page {
         expect(row).toBeTruthy();
     }
 
-    async checkInvoiceDetails(invoice) {
-        const row = await this.getTableRow(invoice);
+    async checkInvoiceDetails(invoice, check_pages=true) {
+        const row = await this.getTableRow(invoice, check_pages);
+        if (!row) {
+            await this.app_state.page.screenshot({ path: 'checkInvoiceDetails_screenshot.png' });
+        }
         expect(row).toBeTruthy();
         const number_text = await row.locator('td:nth-child(1)').textContent();
         expect(number_text).toBe(invoice.number);
@@ -532,28 +553,34 @@ class Manage_invoices_page {
         if (invoice.vehicle !== -1) {
             const vehicle_text = await row.locator('td:nth-child(4)').textContent();
             const vehicle = TEST_VEHICLES[invoice.vehicle];
-            expect(vehicle_text).toBe(vehicle.rego + '    ' + vehicle.kms + ' km' + vehicle.make_model);
+            let expected_vehicle_text = '';
+            if (vehicle.rego !== '') {
+                expected_vehicle_text += vehicle.rego;
+            }
+            if (vehicle.kms !== 0) {
+                if (expected_vehicle_text !== '') {
+                    expected_vehicle_text += '    ';
+                }
+                expected_vehicle_text += vehicle.kms + ' km';
+            }
+            expected_vehicle_text += vehicle.make_model;
+            expect(vehicle_text).toBe(expected_vehicle_text);
         }
         const total_text = await row.locator('td:nth-child(5)').textContent();
-        expect(total_text).toBe('$' + invoice.total.toFixed(2));
+        expect(total_text, 'INV: ' + invoice.number + ' ' + invoice.getTotalsStr()).toBe('$' + invoice.total.toFixed(2));
     }
 }
 
 
-class Create_invoice_page {
+class Edit_invoice_page {
 
     constructor(app_state) {
         this.app_state = app_state;
         this.page = app_state.page;
     }
 
-    async goto() {
-        await this.page.goto('http://localhost:8000/#create-invoice');
-        /*
-        await this.checkInvoiceNumber('INV-' + this.app_state.next_invoice_number.toString().padStart(6, '0'));
-        await this.checkInvoiceDate();
-        await this.checkInvoiceDueDate(null);
-        */
+    async goto(id) {
+        await this.page.goto('http://localhost:8000/#edit-invoice/' + id);
     }
 
     async saveInvoice(ack_notification=true) {
@@ -568,12 +595,6 @@ class Create_invoice_page {
             return true;
         }
         return false;
-    }
-
-    async selectClient() {
-    }
-
-    async selectClientVehicle() {
     }
 
     async selectItem() {
@@ -627,45 +648,13 @@ class Create_invoice_page {
     }
 
     async fillClient(data) {
+        // Assuming the client UI has been made editable
         await clientToPage(this.page, '#page-edit-invoice .client-info', data, true);
     }
 
     async fillVehicle(data) {
+        // Assuming the vehicle UI has been made editable
         await vehicleToPage(this.page, '#page-edit-invoice .vehicle-info', data, true);
-    }
-
-    async fill(invoice) {
-        if (invoice.date !== null) {
-            await this.fillInvoiceDate(invoice.date);
-        }
-        if (invoice.due_date !== null) {
-            await this.fillInvoiceDueDate(invoice.due_date);
-        }
-        if (invoice.client !== -1) {
-            await this.fillClient(TEST_CLIENTS[invoice.client]);
-        }
-        if (invoice.vehicle !== -1) {
-            await this.fillVehicle(TEST_VEHICLES[invoice.vehicle]);
-        }
-        for (const item_index of invoice.items) {
-            await this.addItem(TEST_ITEMS[item_index]);
-        }
-        if (invoice.discount_pct !== 0.0) {
-            await this.fillDiscountPct(invoice.discount_pct);
-        }
-        if (invoice.discount_amount !== 0.0) {
-            await this.fillDiscountAmount(invoice.discount_amount);
-        }
-        if (invoice.received_amount !== 0.0) {
-            await this.fillReceivedAmount(invoice.received_amount);
-        }
-        if (invoice.notes !== '') {
-            await this.fillNotes(invoice.notes);
-        }
-        const invoice_number_loc = this.page.getByTestId('page-edit-invoice-number');
-        invoice.number = await invoice_number_loc.textContent();
-        const invoice_date_loc = this.page.locator('#page-edit-invoice .invoice-date');
-        invoice.date = new Date(await invoice_date_loc.inputValue());
     }
 
     async checkInvoiceNumber(expected) {
@@ -703,6 +692,72 @@ class Create_invoice_page {
     }
 }
 
+class Create_invoice_page extends Edit_invoice_page {
+
+    constructor(app_state) {
+        super(app_state);
+    }
+
+    async goto() {
+        await this.page.goto('http://localhost:8000/#create-invoice');
+    }
+
+    async selectClient() {
+    }
+
+    async selectClientVehicle() {
+    }
+
+    async clickNewClientButton() {
+        const new_client_btn = this.app_state.page.getByTestId("invoice-new-client-btn");
+        await expect(new_client_btn).toBeVisible();
+        await new_client_btn.click();
+    }
+
+    async clickNewVehicleButton() {
+        const new_vehicle_btn = this.app_state.page.getByTestId("invoice-new-vehicle-btn");
+        await expect(new_vehicle_btn).toBeVisible();
+        await new_vehicle_btn.click();
+    }
+
+    async fill(invoice) {
+        if (invoice.date !== null) {
+            await this.fillInvoiceDate(invoice.date);
+        }
+        if (invoice.due_date !== null) {
+            await this.fillInvoiceDueDate(invoice.due_date);
+        }
+        if (invoice.client !== -1) {
+            // TODO(CE): Assuming all clients are 'new' for now, should select existing ones instead.
+            this.clickNewClientButton();
+            await this.fillClient(TEST_CLIENTS[invoice.client]);
+        }
+        if (invoice.vehicle !== -1) {
+            // TODO(CE): Assuming all vehicles are 'new' for now, should select existing ones instead.
+            this.clickNewVehicleButton();
+            await this.fillVehicle(TEST_VEHICLES[invoice.vehicle]);
+        }
+        for (const item_index of invoice.items) {
+            await this.addItem(TEST_ITEMS[item_index]);
+        }
+        if (invoice.discount_pct !== 0.0) {
+            await this.fillDiscountPct(invoice.discount_pct);
+        }
+        if (invoice.discount_amount !== 0.0) {
+            await this.fillDiscountAmount(invoice.discount_amount);
+        }
+        if (invoice.received_amount !== 0.0) {
+            await this.fillReceivedAmount(invoice.received_amount);
+        }
+        if (invoice.notes !== '') {
+            await this.fillNotes(invoice.notes);
+        }
+        const invoice_number_loc = this.page.getByTestId('page-edit-invoice-number');
+        invoice.number = await invoice_number_loc.textContent();
+        const invoice_date_loc = this.page.locator('#page-edit-invoice .invoice-date');
+        invoice.date = new Date(await invoice_date_loc.inputValue());
+    }
+}
 
 class App_state {
 
@@ -711,14 +766,17 @@ class App_state {
 
     create_invoice_page = null;
     manage_invoices_page = null;
+    edit_invoice_page = null;
 
     seed = 12345;
     seeded_random = null;
 
-    constructor(page) {
+    constructor(page, browserName) {
         this.page = page;
+        this.browserName = browserName;
         this.create_invoice_page = new Create_invoice_page(this);
         this.manage_invoices_page = new Manage_invoices_page(this);
+        this.edit_invoice_page = new Edit_invoice_page(this);
         this.seeded_random = new SeededRandom(this.seed);
     }
 
@@ -758,8 +816,8 @@ test_base.describe('SLA', () => {
 
 
 const test = test_base.extend({
-    app_state: async ({page}, use) => {
-        const app_state = new App_state(page);
+    app_state: async ({page, browserName}, use) => {
+        const app_state = new App_state(page, browserName);
         await app_state.goto();
         await use(app_state);
     },
@@ -770,8 +828,17 @@ test('Check create invoice info', async ({app_state}) => {
     // The invoice number and dates are checked in the fixture setup
 });
 
+test('Check create invoice save error when no client created or selected', async ({app_state}) => {
+    await app_state.create_invoice_page.goto();
+    await app_state.create_invoice_page.saveInvoice(false);
+    const [heading_ok,message_ok] = await checkUserNotification(app_state.page, 'Incomplete', 'new client or select');
+    expect(heading_ok).toBe(true);
+    expect(message_ok).toBe(true);
+});
+
 test('Check create invoice save error when no client entered', async ({app_state}) => {
     await app_state.create_invoice_page.goto();
+    await app_state.create_invoice_page.clickNewClientButton();
     await app_state.create_invoice_page.saveInvoice(false);
     const [heading_ok,message_ok] = await checkUserNotification(app_state.page, 'Incomplete', 'client name');
     expect(heading_ok).toBe(true);
@@ -780,16 +847,20 @@ test('Check create invoice save error when no client entered', async ({app_state
 
 test('Create invoice enter client info', async ({app_state}) => {
     await app_state.create_invoice_page.goto();
+    await app_state.create_invoice_page.clickNewClientButton();
     await app_state.create_invoice_page.fillClient(TEST_CLIENTS[0]);
 });
 
 test('Create invoice enter vehicle info', async ({app_state}) => {
     await app_state.create_invoice_page.goto();
+    await app_state.create_invoice_page.clickNewClientButton();
+    await app_state.create_invoice_page.clickNewVehicleButton();
     await app_state.create_invoice_page.fillVehicle(TEST_VEHICLES[0]);
 });
 
 test('Check create invoice save error when no items entered', async ({app_state}) => {
     await app_state.create_invoice_page.goto();
+    await app_state.create_invoice_page.clickNewClientButton();
     await app_state.create_invoice_page.fillClient(TEST_CLIENTS[0]);
     await app_state.create_invoice_page.saveInvoice(false);
     const [heading_ok,message_ok] = await checkUserNotification(app_state.page, 'Incomplete', 'one item');
@@ -799,6 +870,7 @@ test('Check create invoice save error when no items entered', async ({app_state}
 
 test('Check create invoice save ok when client and items entered', async ({app_state}) => {
     await app_state.create_invoice_page.goto();
+    await app_state.create_invoice_page.clickNewClientButton();
     await app_state.create_invoice_page.fillClient(TEST_CLIENTS[1]);
     await app_state.create_invoice_page.addItem(TEST_ITEMS[0]);
     await app_state.create_invoice_page.saveInvoice(false);
@@ -809,7 +881,9 @@ test('Check create invoice save ok when client and items entered', async ({app_s
 
 test('Check create invoice save ok when client, vehicle and items entered', async ({app_state}) => {
     await app_state.create_invoice_page.goto();
+    await app_state.create_invoice_page.clickNewClientButton();
     await app_state.create_invoice_page.fillClient(TEST_CLIENTS[2]);
+    await app_state.create_invoice_page.clickNewVehicleButton();
     await app_state.create_invoice_page.fillVehicle(TEST_VEHICLES[0]);
     await app_state.create_invoice_page.addItem(TEST_ITEMS[0]);
     await app_state.create_invoice_page.saveInvoice(false);
@@ -874,7 +948,10 @@ test('Check multiple saved invoice details in list', async ({app_state}) => {
     for (let i = 0; i < TEST_NUM_INVOICES; i++) {
         // Use search
         await app_state.manage_invoices_page.search(app_state.invoices[i].number);
-        await app_state.manage_invoices_page.checkInvoiceDetails(app_state.invoices[i]);
+        if (app_state.browserName === "webkit") {
+            await app_state.page.screenshot({ path: 'screenshot_' + i + '.png' });
+        }
+        await app_state.manage_invoices_page.checkInvoiceDetails(app_state.invoices[i], false);
         await app_state.manage_invoices_page.clearSearch();
     }
 });

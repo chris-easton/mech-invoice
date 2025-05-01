@@ -26,7 +26,10 @@
     <div class="card-header">
         <div class="d-flex" style="align-items:center;">
             <h5 style="margin-bottom:0;margin-right:auto;">Client Information</h5>
-            <button type="button" style="display:flex;" class="btn btn-primary" id="invoice-select-client-btn">Select existing</button>
+            <div style="display:flex;">
+                <button type="button" style="margin-right:10px;" class="btn btn-primary" id="invoice-new-client-btn" data-testid="invoice-new-client-btn">New client</button>
+                <button type="button" style="display:flex;" class="btn btn-primary" id="invoice-select-client-btn" data-testid="invoice-select-client-btn">Select existing</button>
+            </div>
         </div>
     </div>
     <div class="card-body client-info" data-testid="invoice-client-info">
@@ -66,7 +69,10 @@
     <div class="card-header">
         <div class="d-flex" style="align-items:center;">
             <h5 style="margin-bottom:0;margin-right:auto;">Vehicle Information</h5>
-            <button type="button" style="display:flex;" class="btn btn-primary" id="invoice-select-vehicle-btn" disabled readonly>Select existing</button>
+            <div style="display:flex;">
+                <button type="button" style="margin-right:10px;" class="btn btn-primary" id="invoice-new-vehicle-btn" data-testid="invoice-new-vehicle-btn">New vehicle</button>
+                <button type="button" class="btn btn-primary" id="invoice-select-vehicle-btn" data-testid="invoice-select-vehicle-btn" disabled readonly>Select existing</button>
+            </div>
         </div>
     </div>
     <div class="card-body vehicle-info" data-testid="invoice-vehicle-info">
@@ -103,7 +109,7 @@
           </tbody>
         </table>
         <div class="text-end" style="padding: 0px 0px 10px 0px;">
-            <button type="button" class="btn btn-primary" id="invoice-add-item-btn">Add Row</button>
+            <button type="button" class="btn btn-primary" id="invoice-add-item-btn">New row</button>
             <button type="button" class="btn btn-primary" id="invoice-select-item-btn">Select existing</button>
         </div>
         <div class="row d-flex justify-content-end">

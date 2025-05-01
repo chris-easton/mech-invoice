@@ -28,11 +28,3 @@ function vehiclesSortItems(items) {
     //TODO: Sort vehicles somehow
     return items;
 }
-
-async function onVehicleChosen(sid) {
-    const id = parseInt(sid);
-    console.log("Chose vehicle Id=" + id);
-    const vehicle = await dbGetVehicleById(id);
-    current_invoice.vehicle_id = id;
-    vehicleToUi(vehicle, 0);
-}

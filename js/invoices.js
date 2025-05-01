@@ -51,10 +51,13 @@ async function invoicesPopulateTableRow(tr, invoice) {
     if (vehicle) {
         var vehicle_description = '';
         if (vehicle.rego) {
-            vehicle_description = vehicle_description + `${vehicle.rego}`;
+            vehicle_description = `${vehicle.rego}`;
         }
         if (invoice.odo) {
-            vehicle_description = vehicle_description + `    ${invoice.odo} km`;
+            if (vehicle_description !== '') {
+                vehicle_description += '    ';
+            }
+            vehicle_description += `${invoice.odo} km`;
         }
         if (vehicle.make_model) {
             if (vehicle_description !== '') vehicle_description += '<br>';

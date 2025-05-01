@@ -45,6 +45,7 @@ function resetVehicleUi(selector) {
     element.querySelector('.vehicle-rego').value = '';
     element.querySelector('.vehicle-make-model').value = '';
     element.querySelector('.vehicle-odometer').value = '';
+    element.removeAttribute('data-id');
 }
 
 function vehicleToUi(vehicle, odo=null) {
