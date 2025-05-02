@@ -1,12 +1,13 @@
 
-const db_name = 'mechanic-invoices-db';
+const DB_NAME = 'mechanic-invoices-db';
+const INDEXEDDB_DB_VERSION = 3;
 
 /**
  * Initialize IndexedDB
  */
 function initDB() {
   return new Promise((resolve, reject) => {
-    let request = indexedDB.open(db_name, 3);
+    let request = indexedDB.open(DB_NAME, INDEXEDDB_DB_VERSION);
     request.onupgradeneeded = function(e) {
       db = e.target.result;
       if(!db.objectStoreNames.contains('invoices')) {
@@ -198,40 +199,87 @@ function dbPutInvoice(invoice) {
     return dbPutItem(data, 'invoices');
 }
 
+function getIndexedDBDataRaw(dbName) {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(dbName);
 
-function exportIndexedDB(dbName) {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(dbName);
+        request.onsuccess = (event) => {
+            const db = event.target.result;
+            const backupData = {};
 
-    request.onsuccess = (event) => {
-      const db = event.target.result;
-      const exportData = {};
+            // Iterate over each object store in the database
+            const transaction = db.transaction(db.objectStoreNames, 'readonly');
+            transaction.oncomplete = () => {
+                resolve(backupData);
+            };
 
-      // Iterate over each object store in the database
-      const transaction = db.transaction(db.objectStoreNames, 'readonly');
-      transaction.oncomplete = () => {
-        resolve(JSON.stringify(exportData));
-      };
+            transaction.onerror = (err) => {
+                reject(`Error during export: ${err}`);
+            };
 
-      transaction.onerror = (err) => {
-        reject(`Error during export: ${err}`);
-      };
-
-      // Collect data from each object store
-      Array.from(db.objectStoreNames).forEach((storeName) => {
-        const store = transaction.objectStore(storeName);
-        const allDataRequest = store.getAll();
-        allDataRequest.onsuccess = () => {
-          exportData[storeName] = allDataRequest.result;
+            // Collect data from each object store
+            Array.from(db.objectStoreNames).forEach((storeName) => {
+                const store = transaction.objectStore(storeName);
+                const allDataRequest = store.getAll();
+                allDataRequest.onsuccess = () => {
+                    backupData[storeName] = allDataRequest.result;
+                };
+            });
         };
-      });
-    };
 
-    request.onerror = (err) => {
-      reject(`Error opening database: ${err}`);
-    };
-  });
+        request.onerror = (err) => {
+            reject(`indexeddb: Error opening database for backup: ${err.target.error}`);
+        };
+    });
 }
+
+
+async function getIndexedDBDataJson(dbName) {
+    return getIndexedDBDataRaw(dbName).then(rawData => {
+        const currentDate = new Date().toISOString();
+        const backupData = {
+            db_version: INDEXEDDB_DB_VERSION,
+            app_version: '@VERSION@',
+            date: currentDate,
+            data: rawData
+        };
+        return JSON.stringify(backupData,null,2);
+    });
+}
+
+async function createLocalIndexedDBBackup(dbName) {
+    getIndexedDBDataJson(DB_NAME).then((file) => {
+        const currentDate = new Date().toISOString().replace(/[:\-T]/g, '_').split('.')[0]; // Formats to YYYY_MM_DD_HH_MM_SS
+        const backupKey = `backup_${dbName}_${currentDate}`;
+        try {
+            localStorage.setItem(backupKey, file);
+            console.log(`indexeddb: Successfully created local backup: ${backupKey}`);
+            userNotification("Success", "Local backup created successfully");
+            manageLocalIndexedDBBackups(dbName);
+        } catch (error) {
+            console.log(`indexeddb: Failed to set backup in localStorage. Error: ${error}`);
+            userNotification("Error", "Failed to create backup");
+        }
+    }).catch((error) => {
+        console.log(`indexeddb: Failed to get DB data. Error: ${error}`);
+        userNotification("Error", "Failed to create backup");
+    });
+}
+
+
+function manageLocalIndexedDBBackups(dbName) {
+    const keys = Object.keys(localStorage).filter(key => key.startsWith(`backup_${dbName}_`));
+    const maxBackups = 5;
+    if (keys.length > maxBackups) {
+        keys.sort(); // Sort keys ( chronological order )
+        while (keys.length > maxBackups) {
+            const backup_to_delete = keys.shift(); // Remove the oldest backup
+            localStorage.removeItem(backup_to_delete);
+            console.log(`indexeddb: Deleted oldest backup: ${backup_to_delete}`);
+        }
+    }
+}
+
 
 function importIndexedDB(dbName, data) {
   return new Promise((resolve, reject) => {
@@ -332,7 +380,7 @@ async function onBackupChosen(id) {
     document.getElementById('restore-drive-backup-spin').classList.remove('d-none');
     const raw = await downloadFile(id);
     const data = JSON.parse(raw);
-    await importIndexedDB(db_name, data);
+    await importIndexedDB(DB_NAME, data);
     settings.loadSettings(true);
     document.getElementById('restore-drive-backup-spin').classList.add('d-none');
     userNotification("Success", "Backup restored");
@@ -358,7 +406,7 @@ async function restoreFromBackup() {
 }
 
 async function downloadDbBackup() {
-    exportIndexedDB(db_name).then((file) => {
+    getIndexedDBDataJson(DB_NAME).then((file) => {
         // Convert the export data into a Blob (JSON format)
         const blob = new Blob([file], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -390,7 +438,7 @@ function backupsUpdateGoogleSignInStatus(isSignedIn) {
 
 document.getElementById('create-drive-backup-btn').addEventListener('click', async () => {
     document.getElementById('create-drive-backup-spin').classList.remove('d-none');
-    exportIndexedDB(db_name).then(async (file) => {
+    getIndexedDBDataJson(DB_NAME).then(async (file) => {
         await uploadDbBackup(file);
         document.getElementById('create-drive-backup-spin').classList.add('d-none');
         console.log("Drive backup created successfully");
@@ -412,10 +460,14 @@ document.getElementById('create-file-backup-btn').addEventListener('click', asyn
     await downloadDbBackup();
 });
 
+document.getElementById('create-local-backup-btn').addEventListener('click', async () => {
+    await createLocalIndexedDBBackup(DB_NAME);
+});
+
 document.getElementById('import-file-backup-input').addEventListener('change', (event) => {
   const file = event.target.files[0];
   if (file) {
-    importIndexedDB(db_name, file).then((message) => {
+    importIndexedDB(DB_NAME, file).then((message) => {
         console.log(message);
         userNotification("Success", message);
     }).catch((error) => {

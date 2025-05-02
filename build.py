@@ -59,7 +59,7 @@ def replace_tokens(content, processed_files):
                 ext = ext[1:]  # Remove leading dot
 
                 if ext in DIRECT_EMBED_EXTENSIONS:
-                    processed_files[token] = file_content.decode('utf-8')  # Decode bytes to string for direct embed
+                    processed_files[token] = file_content.decode('utf-8').strip()  # Decode bytes to string for direct embed
                 else:
                     # Encode in base64
                     processed_files[token] = base64.b64encode(file_content).decode('utf-8')
