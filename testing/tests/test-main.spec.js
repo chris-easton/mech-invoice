@@ -2,15 +2,21 @@
 //import { test as test_base, expect } from '@playwright/test';
 const { test: test_base } = require('@playwright/test');
 import { expect } from '@playwright/test';
+const fs = require('fs');
 
+
+const VENDOR_INFO = {
+    name: 'Acme Auto',
+    email: 'acme-auto@test.com',
+    phone: '0412345678',
+    address: '42 Blacktop Road',
+    city: 'Big Town',
+    postcode: '0123',
+}
 
 const TEST_SETTINGS = {
-    vendor_name: 'Acme Auto',
-    vendor_email: 'acme-auto@test.com',
-    vendor_phone: '0412345678',
-    vendor_address: '42 Blacktop Road',
-    vendor_city: 'Big Town',
-    vendor_postcode: '0123',
+    id: 'main',
+    vendor: VENDOR_INFO,
     vendor_abn: '1234-1234-1234',
     vendor_gst: 10,
     payment_bank: 'Bro-Trust',
@@ -21,11 +27,12 @@ const TEST_SETTINGS = {
     payment_payid_name: 'Acme Auto',
     payment_payid_id: '1234-1234-1234',
     invoice_prefix: '#',
-    next_invoice_number: '1234',
+    next_invoice_number: 1234,
     gapi_client_id: '',
     google_drive_path: 'Acme Auto',
     email_subject: '',
     email_body: '',
+    sla_accepted: true,
 };
 
 const TEST_CLIENTS = [
@@ -186,11 +193,144 @@ class SeededRandom {
     }
 }
 
+function getExportedContactInfo(contact) {
+    return {
+        name: contact.name || '',
+        surname: contact.surname || '',
+        email: contact.email || '',
+        phone: contact.phone || '',
+        address: contact.address || '',
+        city: contact.city || '',
+        postcode: contact.postcode || '',
+        date: ''
+    };
+}
+
+function getExportedClientInfo(client, id, vehicles, skip_notes=false) {
+    const info = {
+        contact: getExportedContactInfo(client.contact),
+        vehicle_ids: vehicles,
+        notes: '',
+        deleted: false,
+        date: '',
+        id: id
+    };
+    if (!skip_notes) {
+        info.notes = client.notes || "";
+    }
+    return info;
+}
+
+function getExportedVehicleInfo(vehicle, id) {
+    return {
+        make_model: vehicle.make_model || '',
+        rego: vehicle.rego || '',
+        notes: vehicle.notes || '',
+        deleted: false,
+        date: '',
+        id: id
+    };
+}
+
+function getExportedProductInfo(product, id, skip_notes=false) {
+    const info = {
+        name: product.name || '',
+        description: product.description || '',
+        price: product.price || '',
+        notes: '',
+        deleted: false,
+        date: '',
+        id: id
+    };
+    if (!skip_notes) {
+        info.notes = product.notes || '';
+    }
+    return info;
+}
+
+function getExportedSettingsInfo(settings, number_of_invoices=0) {
+        const data = {
+            //vendor: getExportedContactInfo(settings.vendor),
+            vendor_name: settings.vendor.name,
+            vendor_email: settings.vendor.email,
+            vendor_phone: settings.vendor.phone,
+            vendor_address: settings.vendor.address,
+            vendor_city: settings.vendor.city,
+            vendor_postcode: settings.vendor.postcode,
+            vendor_abn: settings.vendor_abn,
+            vendor_gst: settings.vendor_gst,
+            payment_bank: settings.payment_bank,
+            payment_bsb: settings.payment_bsb,
+            payment_name: settings.payment_name,
+            payment_account: settings.payment_account,
+            payment_reference: settings.payment_reference,
+            payment_payid_name: settings.payment_payid_name,
+            payment_payid_id: settings.payment_payid_id,
+            invoice_prefix: settings.invoice_prefix,
+            next_invoice_number: settings.next_invoice_number + number_of_invoices,
+            sla_accepted: settings.sla_accepted,
+            gapi_client_id: settings.gapi_client_id,
+            google_drive_path: settings.google_drive_path,
+            email_subject: settings.email_subject,
+            email_body: settings.email_body,
+        };
+        if (settings.id !== undefined) {
+            data.id = settings.id;
+        }
+        return data;
+}
+
+function getInvoiceItemInfo(item_index) {
+    const item = TEST_ITEMS[item_index];
+    return {
+        id: item.id,
+        product_id: item_index,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        qty: item.qty,
+        deleted: false,
+        date: ''
+    };
+}
+
+function getExportedInvoiceInfo(invoice, id) {
+    const data = {
+        number: invoice.number,
+        date: '',
+        due_date: invoice.due_date?.toISOString() || null,
+        client_id: invoice.client_id,
+        vehicle_id: invoice.vehicle_id,
+        odo: invoice.odo,
+        items: invoice.items.map(item => getInvoiceItemInfo(item)),
+        sub_total: invoice.subtotal,
+        discount: invoice.discount_amount,
+        discount_pct: invoice.discount_pct,
+        gst: invoice.gst_pct,
+        received: invoice.received_amount,
+        total: invoice.total,
+        notes: invoice.notes,
+        deleted: false,
+        email_sent_dates: invoice.email_sent_dates.map(date => date.toISOString()),
+        drive_id: "",
+        last_upload_date: '',
+        last_change_date: '',
+        created_date: '',
+    };
+    if (id !== undefined) {
+        data.id = id;
+    }
+    return data;
+}
 
 // Function to generate random client object using seeded random generator
-function generateRandomInvoice(random) {
+function generateRandomInvoice(random, settings_loaded=false) {
 
     const invoice = new Invoice();
+
+    if (settings_loaded) {
+        invoice.gst_pct = TEST_SETTINGS.vendor_gst;
+    }
 
     invoice.addClient(random.nextInt(0, TEST_CLIENTS.length));
 
@@ -245,42 +385,54 @@ async function gotoPage(page, name) {
         await page.getByTestId(dropdown + '-link').click();
     }
     const page_link = page_id + '-link';
-    const link = page.getByTestId(page_link)
+    const link = await page.getByTestId(page_link)
     await expect(link).toBeVisible();
     await link.click();
     await expect(page.getByTestId(page_id + '-heading')).toBeVisible();
 }
 
-async function setMinimalSettings(page) {
+async function setMinimalSettings(page, save=true) {
     await gotoPage(page, 'Settings');
-    await page.getByTestId('settings-vendor-name').fill(TEST_SETTINGS.vendor_name);
-    await page.getByTestId('settings-vendor-phone').fill(TEST_SETTINGS.vendor_phone);
-    await page.getByTestId('settings-vendor-email').fill(TEST_SETTINGS.vendor_email);
+    await page.getByTestId('settings-vendor-name').fill(TEST_SETTINGS.vendor.name);
+    await page.getByTestId('settings-vendor-phone').fill(TEST_SETTINGS.vendor.phone);
+    await page.getByTestId('settings-vendor-email').fill(TEST_SETTINGS.vendor.email);
     await page.getByTestId('settings-vendor-abn').fill(TEST_SETTINGS.vendor_abn);
-    await page.getByTestId('settings-vendor-gst').fill(TEST_SETTINGS.vendor_gst);
-    await page.getByTestId('save-settings-btn').click();
+    await page.getByTestId('settings-vendor-gst').fill(TEST_SETTINGS.vendor_gst.toFixed(2));
+    if (save) {
+        await page.getByTestId('save-settings-btn').click();
+        await acknowledgeUserNotification(page);
+    }
 }
 
-async function setSomeSettings(page) {
-    await setMinimalSettings(page);
+async function setSomeSettings(page, save=true) {
+    await setMinimalSettings(page, false);
     await page.getByTestId('settings-bank-name').fill(TEST_SETTINGS.payment_bank);
     await page.getByTestId('settings-bank-bsb').fill(TEST_SETTINGS.payment_bsb);
     await page.getByTestId('settings-bank-account-number').fill(TEST_SETTINGS.payment_account);
-    await page.getByTestId('save-settings-btn').click();
+    if (save) {
+        await page.getByTestId('save-settings-btn').click();
+        await acknowledgeUserNotification(page);
+    }
 }
 
-async function setAllSettings(page) {
-    await setSomeSettings(page);
-    await page.getByTestId('settings-vendor-address').fill(TEST_SETTINGS.vendor_address);
-    await page.getByTestId('settings-vendor-city').fill(TEST_SETTINGS.vendor_city);
-    await page.getByTestId('settings-vendor-postcode').fill(TEST_SETTINGS.vendor_postcode);
+async function setAllSettings(page, save=true) {
+    await setSomeSettings(page, false);
+    await page.getByTestId('settings-vendor-address').fill(TEST_SETTINGS.vendor.address);
+    await page.getByTestId('settings-vendor-city').fill(TEST_SETTINGS.vendor.city);
+    await page.getByTestId('settings-vendor-postcode').fill(TEST_SETTINGS.vendor.postcode);
     await page.getByTestId('settings-bank-account-name').fill(TEST_SETTINGS.payment_name);
     await page.getByTestId('settings-bank-reference').fill(TEST_SETTINGS.payment_reference);
     await page.getByTestId('settings-payid-name').fill(TEST_SETTINGS.payment_payid_name);
     await page.getByTestId('settings-payid-id').fill(TEST_SETTINGS.payment_payid_id);
     await page.getByTestId('settings-invoice-prefix').fill(TEST_SETTINGS.invoice_prefix);
-    await page.getByTestId('settings-next-invoice-number').fill(TEST_SETTINGS.next_invoice_number);
-    await page.getByTestId('save-settings-btn').click();
+    await page.getByTestId('settings-next-invoice-number').fill(TEST_SETTINGS.next_invoice_number.toFixed());
+    await page.getByTestId('settings-gapi-client-id').fill(TEST_SETTINGS.gapi_client_id);
+    await page.getByTestId('settings-google-drive-path').fill(TEST_SETTINGS.google_drive_path);
+    if (save) {
+        await page.getByTestId('save-settings-btn').click();
+        await sleep(500);
+        await acknowledgeUserNotification(page);
+    }
 }
 
 
@@ -374,7 +526,7 @@ async function acknowledgeUserNotification(page) {
         const close_btn = await user_notify_loc.getByTestId('modal-notify-close-btn');
         await close_btn.click();
         expect(close_btn).toBeHidden();
-        await sleep(500); //TODO
+        await sleep(500);
     }
 }
 
@@ -382,6 +534,69 @@ async function acknowledgeUserNotification(page) {
 async function checkSaveSuccess(page) {
     const [heading_ok,message_ok] = await checkUserNotification(page, 'Success', '');
     return heading_ok;
+}
+
+
+function isObject(value) {
+    return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+
+function compareJsonObjects(obj1, obj2, ignoredFields = [], path = '') {
+    const differences = [];
+
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+
+    const allKeys = new Set([...keys1, ...keys2]);
+
+    for (const key of allKeys) {
+        const fullPath = path ? `${path}.${key}` : key;
+
+        const val1 = obj1[key];
+        const val2 = obj2[key];
+
+        if (ignoredFields.includes(key)) {
+            // Ensure that ignored keys exist in both JSON objects
+            if (!keys1.includes(key)) {
+                differences.push(`Missing ignored key in template JSON: ${fullPath}`);
+            }
+            if (!keys2.includes(key)) {
+                differences.push(`Missing ignored key in downloaded JSON: ${fullPath}`);
+            }
+            continue;
+        }
+
+        if (!keys2.includes(key)) {
+            differences.push(`Missing key in downloaded JSON: ${fullPath}`);
+            continue;
+        }
+        if (!keys1.includes(key)) {
+            differences.push(`Extra key in downloaded JSON: ${fullPath}`);
+            continue;
+        }
+
+        if (isObject(val1) && isObject(val2)) {
+            const nestedDiffs = compareJsonObjects(val1, val2, ignoredFields, fullPath);
+            differences.push(...nestedDiffs);
+        } else if (Array.isArray(val1) && Array.isArray(val2)) {
+            // Compare arrays
+            if (val1.length !== val2.length) {
+                differences.push(`Mismatch in key "${fullPath}": array lengths differ`);
+            } else {
+                // Compare array elements
+                for (let i = 0; i < val1.length; i++) {
+                    const elementPath = `${fullPath}[${i}]`;
+                    const elementDiffs = compareJsonObjects({ item: val1[i] }, { item: val2[i] }, ignoredFields, elementPath);
+                    differences.push(...elementDiffs);
+                }
+            }
+        } else if (val1 !== val2) {
+            differences.push(`Mismatch in key "${fullPath}": template = ${JSON.stringify(val1)}, downloaded = ${JSON.stringify(val2)}`);
+        }
+    }
+
+    return differences;
 }
 
 
@@ -402,6 +617,7 @@ class Invoice {
     due_date = null;
     client = -1;
     vehicle = -1;
+    odo = null;
     items = [];
     subtotal = 0.0;
     discount_pct = 0.0;
@@ -412,6 +628,9 @@ class Invoice {
     total = 0.0;
     amount_due = 0.0;
     notes = '';
+
+    email_sent_dates = [];
+    last_uploaded_date = [];
 
     addClient(index) {
         this.client = index;
@@ -606,6 +825,7 @@ class Edit_invoice_page {
     async addItemRow() {
         const add_item_loc = await this.page.locator('#invoice-add-item-btn');
         await add_item_loc.click();
+        await sleep(500);
     }
 
     async fillInvoiceDate(date) {
@@ -643,8 +863,8 @@ class Edit_invoice_page {
         await productToPage(this.page, '#modal-edit-item', data, true);
         const save_item_loc = await this.page.locator('#modal-edit-item .modal-save-btn');
         await save_item_loc.click();
-        expect(save_item_loc).toBeHidden();
         await sleep(1000); //TODO
+        expect(save_item_loc).toBeHidden();
     }
 
     async fillClient(data) {
@@ -759,33 +979,110 @@ class Create_invoice_page extends Edit_invoice_page {
     }
 }
 
+
+class Backups_page {
+
+    constructor(app_state) {
+        this.app_state = app_state;
+        this.page = app_state.page;
+    }
+
+    async goto() {
+        await this.page.goto('http://localhost:8000/#backups');
+        await sleep(500);
+    }
+
+    async clickDownloadBackup() {
+        const dl_backup_btn = this.page.getByTestId('create-file-backup-btn');
+        await expect(dl_backup_btn).toBeVisible();
+        await dl_backup_btn.click();
+        const [download] = await Promise.all([
+            this.page.waitForEvent('download'),
+            dl_backup_btn.click()
+        ]);
+        const path = await download.path();
+        //console.log("Got file path: " + path);
+        const downloadedJson = fs.readFileSync(path, 'utf-8');
+        const parsedData = JSON.parse(downloadedJson);
+        //console.log("File content: ")
+        //console.log(parsedData);
+        return [parsedData,path];
+    }
+
+}
+
+
 class App_state {
 
     invoices = [];
     next_invoice_number = 1;
 
+    seed = 12345;
+    seeded_random = null;
+
     create_invoice_page = null;
     manage_invoices_page = null;
     edit_invoice_page = null;
-
-    seed = 12345;
-    seeded_random = null;
+    backups_page = null;
 
     constructor(page, browserName) {
         this.page = page;
         this.browserName = browserName;
+        this.seeded_random = new SeededRandom(this.seed);
+
         this.create_invoice_page = new Create_invoice_page(this);
         this.manage_invoices_page = new Manage_invoices_page(this);
         this.edit_invoice_page = new Edit_invoice_page(this);
-        this.seeded_random = new SeededRandom(this.seed);
+        this.backups_page = new Backups_page(this);
     }
 
-    generateInvoice(save=false) {
-        const invoice = generateRandomInvoice(this.seeded_random);
+    generateInvoice(save=false, settings_loaded=false) {
+        const invoice = generateRandomInvoice(this.seeded_random, settings_loaded);
         if (save) {
             this.invoices.push(invoice);
         }
         return invoice;
+    }
+
+    generateExpectedJsonBackupData() {
+        const all_clients = [];
+        const productSet = new Set();
+        const all_products = [];
+        const all_vehicles = [];
+        const all_invoices = [];
+        var id = 1;
+        for (const invoice of this.invoices) {
+            var client_vehicles = [];
+            if (invoice.vehicle !== -1) {
+                all_vehicles.push(getExportedVehicleInfo(TEST_VEHICLES[invoice.vehicle], all_vehicles.length + 1));
+                client_vehicles.push(all_vehicles.length);
+            }
+            all_clients.push(getExportedClientInfo(TEST_CLIENTS[invoice.client], id, client_vehicles, true));
+            for (const product of invoice.items) {
+                if (!productSet.has(product)) {
+                    productSet.add(product);
+                }
+            }
+            all_invoices.push(getExportedInvoiceInfo(invoice, id));
+            id++;
+        }
+        id = 0;
+        for (const product of productSet) {
+            all_products.push(getExportedProductInfo(TEST_ITEMS[product], id, true));
+            id++;
+        }
+        return {
+            db_version: 3,
+            app_version: '2025.0',
+            date: '',
+            data: {
+                clients: all_clients,
+                vehicles: all_vehicles,
+                products: all_products,
+                settings: [getExportedSettingsInfo(TEST_SETTINGS, this.invoices.length)],
+                invoices: all_invoices
+            }
+        };
     }
 
     async goto() {
@@ -954,4 +1251,45 @@ test('Check multiple saved invoice details in list', async ({app_state}) => {
         await app_state.manage_invoices_page.checkInvoiceDetails(app_state.invoices[i], false);
         await app_state.manage_invoices_page.clearSearch();
     }
+});
+
+
+test('Check exported DB data with a few invoices', async ({app_state}) => {
+
+    await sleep(500);
+
+    await setAllSettings(app_state.page);
+
+    const TEST_NUM_INVOICES = 5;
+
+    for (let i = 0; i < TEST_NUM_INVOICES; i++) {
+        const invoice = app_state.generateInvoice(true, true);
+        await app_state.create_invoice_page.goto();
+        await app_state.create_invoice_page.fill(invoice);
+        await app_state.create_invoice_page.saveInvoice(true);
+    }
+
+    const expected_data = app_state.generateExpectedJsonBackupData();
+
+    await app_state.backups_page.goto();
+    const [received_data,file_path] = await app_state.backups_page.clickDownloadBackup();
+
+    const differences = compareJsonObjects(expected_data, received_data, [
+        'id',
+        'product_id',
+        'client_id',
+        'vehicle_id',
+        'app_version',
+        'date',
+        'created_date',
+        'last_change_date',
+        'last_upload_date',
+    ]);
+
+    if (differences.length > 0) {
+        console.log("Differences found:");
+        differences.forEach(diff => console.log(diff));
+    }
+
+    expect(differences.length).toBe(0);
 });
